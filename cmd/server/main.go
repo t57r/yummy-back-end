@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/cors"
+	"github.com/gofiber/fiber/v3/middleware/static"
 
 	"yummy/cmd/server/handlers"
 	"yummy/internal/config"
@@ -45,6 +46,7 @@ func main() {
 		AllowHeaders: []string{"Origin", "Content-Type", "Accept"},
 		AllowMethods: []string{"GET", "POST", "PUT", "DELETE", "PATCH"},
 	}))
+	app.Use("/img", static.New("./img"))
 
 	h.SetupRoutes(app, []byte(cfg.JWTAccessSecret))
 
