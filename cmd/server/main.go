@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/cors"
 
 	"yummy/cmd/server/handlers"
 	"yummy/internal/config"
@@ -28,7 +28,7 @@ func main() {
 	h := handlers.NewHandlers(cfg, queries)
 
 	app := fiber.New(fiber.Config{
-		ErrorHandler: func(c *fiber.Ctx, err error) error {
+		ErrorHandler: func(c fiber.Ctx, err error) error {
 			code := fiber.StatusInternalServerError
 			msg := "internal error"
 			if e, ok := err.(*fiber.Error); ok {
@@ -41,9 +41,9 @@ func main() {
 
 	// Enable CORS with custom configuration
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: "http://localhost:8082",
-		AllowHeaders: "Origin, Content-Type, Accept",
-		AllowMethods: "GET, POST, PUT, DELETE, PATCH",
+		AllowOrigins: []string{"http://localhost:8082"},
+		AllowHeaders: []string{"Origin", "Content-Type", "Accept"},
+		AllowMethods: []string{"GET", "POST", "PUT", "DELETE", "PATCH"},
 	}))
 
 	h.SetupRoutes(app, []byte(cfg.JWTAccessSecret))

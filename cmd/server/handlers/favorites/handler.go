@@ -6,7 +6,7 @@ import (
 
 	"yummy/internal/db"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 type Handler struct {
@@ -17,7 +17,7 @@ func NewHandler(queries *db.Queries) *Handler {
 	return &Handler{Queries: queries}
 }
 
-func (h *Handler) Add(c *fiber.Ctx) error {
+func (h *Handler) Add(c fiber.Ctx) error {
 	userID := c.Locals("userID").(int64)
 	recipeID, err := strconv.ParseInt(c.Params("recipeId"), 10, 64)
 	if err != nil {
@@ -44,7 +44,7 @@ func (h *Handler) Add(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusNoContent)
 }
 
-func (h *Handler) Remove(c *fiber.Ctx) error {
+func (h *Handler) Remove(c fiber.Ctx) error {
 	userID := c.Locals("userID").(int64)
 	recipeID, err := strconv.ParseInt(c.Params("recipeId"), 10, 64)
 	if err != nil {
@@ -62,7 +62,7 @@ func (h *Handler) Remove(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusNoContent)
 }
 
-func (h *Handler) List(c *fiber.Ctx) error {
+func (h *Handler) List(c fiber.Ctx) error {
 	userID := c.Locals("userID").(int64)
 
 	var limit int32 = 20

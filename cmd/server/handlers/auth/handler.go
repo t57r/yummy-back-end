@@ -8,7 +8,7 @@ import (
 	"yummy/internal/db"
 	"yummy/internal/utils"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -43,9 +43,9 @@ func NewHandler(service *Service) *Handler {
 	return &Handler{Auth: service}
 }
 
-func (h *Handler) SignUp(c *fiber.Ctx) error {
+func (h *Handler) SignUp(c fiber.Ctx) error {
 	var req signUpReq
-	if err := c.BodyParser(&req); err != nil {
+	if err := c.Bind().Body(&req); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "invalid json")
 	}
 	req.Email = strings.TrimSpace(strings.ToLower(req.Email))
@@ -84,9 +84,9 @@ func (h *Handler) SignUp(c *fiber.Ctx) error {
 	})
 }
 
-func (h *Handler) SignIn(c *fiber.Ctx) error {
+func (h *Handler) SignIn(c fiber.Ctx) error {
 	var req signInReq
-	if err := c.BodyParser(&req); err != nil {
+	if err := c.Bind().Body(&req); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "invalid json")
 	}
 	req.Email = strings.TrimSpace(strings.ToLower(req.Email))
@@ -123,9 +123,9 @@ func (h *Handler) SignIn(c *fiber.Ctx) error {
 
 }
 
-func (h *Handler) Refresh(c *fiber.Ctx) error {
+func (h *Handler) Refresh(c fiber.Ctx) error {
 	var req refreshReq
-	if err := c.BodyParser(&req); err != nil {
+	if err := c.Bind().Body(&req); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "invalid json")
 	}
 	if strings.TrimSpace(req.RefreshToken) == "" {
@@ -140,7 +140,7 @@ func (h *Handler) Refresh(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"tokens": tokens})
 }
 
-func (h *Handler) Me(c *fiber.Ctx) error {
+func (h *Handler) Me(c fiber.Ctx) error {
 	userIDAny := c.Locals("userID")
 	userID, _ := userIDAny.(int64)
 

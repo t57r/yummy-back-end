@@ -11,7 +11,7 @@ import (
 	"yummy/internal/config"
 	"yummy/internal/db"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 type Handlers struct {
@@ -39,7 +39,7 @@ func NewHandlers(config *config.Config, queries *db.Queries) *Handlers {
 }
 
 func (h *Handlers) SetupRoutes(app *fiber.App, accessSecret []byte) {
-	app.Get("/health", func(c *fiber.Ctx) error { return c.SendString("ok") })
+	app.Get("/health", func(c fiber.Ctx) error { return c.SendString("ok") })
 
 	app.Post("/auth/signup", h.Auth.SignUp)
 	app.Post("/auth/signin", h.Auth.SignIn)

@@ -4,11 +4,11 @@ import (
 	"strings"
 	"yummy/cmd/server/handlers/auth"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 func RequireAuth(accessSecret []byte) fiber.Handler {
-	return func(c *fiber.Ctx) error {
+	return func(c fiber.Ctx) error {
 		h := c.Get("Authorization")
 		if h == "" {
 			return fiber.NewError(fiber.StatusUnauthorized, "missing Authorization header")

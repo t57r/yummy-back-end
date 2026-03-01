@@ -5,7 +5,7 @@ import (
 
 	"yummy/internal/db"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 type Handler struct {
@@ -16,7 +16,7 @@ func NewHandler(queries *db.Queries) *Handler {
 	return &Handler{Queries: queries}
 }
 
-func (h *Handler) List(c *fiber.Ctx) error {
+func (h *Handler) List(c fiber.Ctx) error {
 	categories, err := h.Queries.ListCategories(context.Background())
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "db error")

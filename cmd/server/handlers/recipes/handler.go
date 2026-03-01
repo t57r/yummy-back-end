@@ -8,7 +8,7 @@ import (
 	"yummy/internal/db"
 	"yummy/internal/utils"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 type Handler struct {
@@ -30,7 +30,7 @@ func NewHandler(queries *db.Queries) *Handler {
 	return &Handler{Queries: queries}
 }
 
-func (h *Handler) List(c *fiber.Ctx) error {
+func (h *Handler) List(c fiber.Ctx) error {
 	ctx := context.Background()
 
 	category := strings.TrimSpace(c.Query("category"))
@@ -90,7 +90,7 @@ func (h *Handler) List(c *fiber.Ctx) error {
 	})
 }
 
-func (h *Handler) GetByID(c *fiber.Ctx) error {
+func (h *Handler) GetByID(c fiber.Ctx) error {
 	ctx := context.Background()
 
 	recipeID, err := strconv.ParseInt(c.Params("recipeId"), 10, 64)
