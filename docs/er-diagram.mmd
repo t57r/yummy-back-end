@@ -1,0 +1,53 @@
+erDiagram
+    USERS {
+        BIGSERIAL id PK
+        TEXT name
+        TEXT email UK
+        TEXT password_hash
+        TIMESTAMPTZ created_at
+    }
+
+    RECIPES {
+        BIGINT id PK
+        TEXT title
+        TEXT image
+        TEXT summary
+        TEXT source_url
+        INT prep_time_minutes
+        INT cook_time_minutes
+        INT serves
+        TEXT[] ingredients
+        TEXT[] preparation
+        TEXT[] tags
+    }
+
+    CATEGORIES {
+        SERIAL id PK
+        TEXT name UK
+    }
+
+    FAVORITES {
+        BIGINT user_id PK,FK
+        BIGINT recipe_id PK,FK
+        TIMESTAMPTZ created_at
+    }
+
+    RECIPE_CATEGORIES {
+        BIGINT recipe_id PK,FK
+        INT category_id PK,FK
+    }
+
+    REFRESH_TOKENS {
+        BIGSERIAL id PK
+        BIGINT user_id FK
+        TEXT token_hash UK
+        TIMESTAMPTZ expires_at
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ revoked_at
+    }
+
+    USERS ||--o{ FAVORITES : has
+    RECIPES ||--o{ FAVORITES : is_favorited_in
+    RECIPES ||--o{ RECIPE_CATEGORIES : has
+    CATEGORIES ||--o{ RECIPE_CATEGORIES : groups
+    USERS ||--o{ REFRESH_TOKENS : owns
