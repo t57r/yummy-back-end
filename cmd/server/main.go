@@ -1,8 +1,13 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"log/slog"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/cors"
@@ -61,8 +66,38 @@ func main() {
 
 	addr := ":" + cfg.Port
 	slog.Info("server starting", "addr", addr)
-	if err := app.Listen(addr); err != nil {
-		slog.Error("server stopped", "error", err)
-		os.Exit(1)
+
+	listenErrCh := make(chan error, 1)
+	go func() {
+		listenErrCh <- app.Listen(addr)
+	}()
+
+	sigCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	select {
+	case err := <-listenErrCh:
+		if err != nil {
+			slog.Error("server stopped", "error", err)
+			os.Exit(1)
+		}
+		slog.Info("server stopped")
+	case <-sigCtx.Done():
+		slog.Info("shutdown signal received")
+		if err := app.ShutdownWithTimeout(10 * time.Second); err != nil {
+			if errors.Is(err, fiber.ErrGracefulTimeout) {
+				slog.Warn("graceful shutdown timeout reached", "timeout", "10s")
+			} else {
+				slog.Error("graceful shutdown failed", "error", err)
+				os.Exit(1)
+			}
+		}
+
+		if err := <-listenErrCh; err != nil {
+			slog.Error("server stopped after shutdown with error", "error", err)
+			os.Exit(1)
+		}
+		slog.Info("server stopped gracefully")
 	}
+
 }
