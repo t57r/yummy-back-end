@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"yummy/cmd/server/httplog"
 	"yummy/internal/db"
 	"yummy/internal/utils"
 
@@ -41,6 +42,7 @@ func (h *Handler) List(c fiber.Ctx) error {
 	limit := clampInt(parseInt(c.Query("limit"), 20), 1, 100)
 	lastID := parseInt64(c.Query("last_id"), 0)
 	if lastID < 0 {
+		httplog.Warn(c, "recipes list invalid last_id", "last_id_raw", c.Query("last_id"))
 		return fiber.NewError(fiber.StatusBadRequest, "invalid last_id")
 	}
 	queryLimit := limit + 1
@@ -60,6 +62,7 @@ func (h *Handler) List(c fiber.Ctx) error {
 			Q:    qText,
 		})
 		if err != nil {
+			httplog.Error(c, "recipes count by category failed", err, "category", category)
 			return fiber.NewError(fiber.StatusInternalServerError, "db error")
 		}
 
@@ -70,11 +73,13 @@ func (h *Handler) List(c fiber.Ctx) error {
 			Q:      qText,
 		})
 		if err != nil {
+			httplog.Error(c, "recipes list by category failed", err, "category", category, "last_id", lastID, "limit", limit)
 			return fiber.NewError(fiber.StatusInternalServerError, "db error")
 		}
 	} else {
 		total, err = h.Queries.CountRecipes(ctx, qText)
 		if err != nil {
+			httplog.Error(c, "recipes count failed", err)
 			return fiber.NewError(fiber.StatusInternalServerError, "db error")
 		}
 
@@ -84,6 +89,7 @@ func (h *Handler) List(c fiber.Ctx) error {
 			Q:      qText,
 		})
 		if err != nil {
+			httplog.Error(c, "recipes list failed", err, "last_id", lastID, "limit", limit)
 			return fiber.NewError(fiber.StatusInternalServerError, "db error")
 		}
 	}
@@ -115,11 +121,13 @@ func (h *Handler) GetByID(c fiber.Ctx) error {
 
 	recipeID, err := strconv.ParseInt(c.Params("recipeId"), 10, 64)
 	if err != nil || recipeID <= 0 {
+		httplog.Warn(c, "recipes get invalid recipeId", "recipe_id_raw", c.Params("recipeId"))
 		return fiber.NewError(fiber.StatusBadRequest, "invalid recipeId")
 	}
 
 	recipe, err := h.Queries.GetRecipeByID(ctx, recipeID)
 	if err != nil {
+		httplog.Warn(c, "recipes get not found", "recipe_id", recipeID)
 		return fiber.NewError(fiber.StatusNotFound, "not found")
 	}
 

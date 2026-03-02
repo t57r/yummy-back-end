@@ -1,13 +1,15 @@
 package main
 
 import (
-	"log"
+	"log/slog"
+	"os"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/cors"
 	"github.com/gofiber/fiber/v3/middleware/static"
 
 	"yummy/cmd/server/handlers"
+	"yummy/cmd/server/httplog"
 	"yummy/internal/config"
 	"yummy/internal/db"
 )
@@ -15,12 +17,14 @@ import (
 func main() {
 	cfg, err := config.Load()
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("config load failed", "error", err)
+		os.Exit(1)
 	}
 
 	pool, err := db.CreatePool(cfg)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("db pool init failed", "error", err)
+		os.Exit(1)
 	}
 	defer pool.Close()
 
@@ -36,6 +40,11 @@ func main() {
 				code = e.Code
 				msg = e.Message
 			}
+			if code >= fiber.StatusInternalServerError {
+				httplog.Error(c, "request failed", err, "status", code)
+			} else {
+				httplog.Warn(c, "request rejected", "status", code, "message", msg)
+			}
 			return c.Status(code).JSON(fiber.Map{"error": msg})
 		},
 	})
@@ -50,6 +59,10 @@ func main() {
 
 	h.SetupRoutes(app, []byte(cfg.JWTAccessSecret))
 
-	log.Printf("listening on :%s", cfg.Port)
-	log.Fatal(app.Listen(":" + cfg.Port))
+	addr := ":" + cfg.Port
+	slog.Info("server starting", "addr", addr)
+	if err := app.Listen(addr); err != nil {
+		slog.Error("server stopped", "error", err)
+		os.Exit(1)
+	}
 }
