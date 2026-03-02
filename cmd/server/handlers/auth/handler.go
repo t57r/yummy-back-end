@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strings"
 
+	"yummy/cmd/server/userctx"
 	"yummy/internal/db"
 	"yummy/internal/utils"
 
@@ -134,15 +135,17 @@ func (h *Handler) Refresh(c fiber.Ctx) error {
 
 	tokens, err := h.Auth.Refresh(context.Background(), req.RefreshToken)
 	if err != nil {
-		return fiber.NewError(fiber.StatusUnauthorized, err.Error())
+		return fiber.NewError(fiber.StatusUnauthorized, "invalid refresh token")
 	}
 
 	return c.JSON(fiber.Map{"tokens": tokens})
 }
 
 func (h *Handler) Me(c fiber.Ctx) error {
-	userIDAny := c.Locals("userID")
-	userID, _ := userIDAny.(int64)
+	userID, err := userctx.CurrentUserID(c)
+	if err != nil {
+		return err
+	}
 
 	user, err := h.Auth.Queries.GetUserByID(context.Background(), userID)
 	if err != nil {

@@ -6,6 +6,8 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"errors"
+	"fmt"
+	"math"
 	"time"
 
 	"yummy/internal/db"
@@ -106,8 +108,11 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (Tokens, err
 
 func ParseAccessToken(tokenStr string, accessSecret []byte) (int64, error) {
 	tok, err := jwt.Parse(tokenStr, func(t *jwt.Token) (any, error) {
+		if t.Method != jwt.SigningMethodHS256 {
+			return nil, fmt.Errorf("unexpected signing method: %s", t.Method.Alg())
+		}
 		return accessSecret, nil
-	})
+	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
 	if err != nil || !tok.Valid {
 		return 0, errors.New("invalid token")
 	}
@@ -125,6 +130,9 @@ func ParseAccessToken(tokenStr string, accessSecret []byte) (int64, error) {
 	subFloat, ok := claims["sub"].(float64) // JSON numbers decode as float64
 	if !ok {
 		return 0, errors.New("missing sub")
+	}
+	if subFloat <= 0 || math.Trunc(subFloat) != subFloat {
+		return 0, errors.New("invalid sub")
 	}
 
 	return int64(subFloat), nil

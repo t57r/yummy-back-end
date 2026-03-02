@@ -3,6 +3,7 @@ package middlewares
 import (
 	"strings"
 	"yummy/cmd/server/handlers/auth"
+	"yummy/cmd/server/userctx"
 
 	"github.com/gofiber/fiber/v3"
 )
@@ -21,7 +22,7 @@ func RequireAuth(accessSecret []byte) fiber.Handler {
 		if err != nil {
 			return fiber.NewError(fiber.StatusUnauthorized, "invalid token")
 		}
-		c.Locals("userID", userID)
+		c.Locals(userctx.UserIDLocalKey, userID)
 		return c.Next()
 	}
 }

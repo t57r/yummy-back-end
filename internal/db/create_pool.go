@@ -11,7 +11,7 @@ import (
 func CreatePool(cfg *config.Config) (*pgxpool.Pool, error) {
 	dbConfig, err := pgxpool.ParseConfig(cfg.DatabaseURL)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	dbConfig.MaxConns = int32(cfg.MaxDBConnections)
 	return pgxpool.NewWithConfig(context.Background(), dbConfig)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"strconv"
 
+	"yummy/cmd/server/userctx"
 	"yummy/internal/db"
 
 	"github.com/gofiber/fiber/v3"
@@ -18,7 +19,10 @@ func NewHandler(queries *db.Queries) *Handler {
 }
 
 func (h *Handler) Add(c fiber.Ctx) error {
-	userID := c.Locals("userID").(int64)
+	userID, err := userctx.CurrentUserID(c)
+	if err != nil {
+		return err
+	}
 	recipeID, err := strconv.ParseInt(c.Params("recipeId"), 10, 64)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "invalid recipeId")
@@ -45,7 +49,10 @@ func (h *Handler) Add(c fiber.Ctx) error {
 }
 
 func (h *Handler) Remove(c fiber.Ctx) error {
-	userID := c.Locals("userID").(int64)
+	userID, err := userctx.CurrentUserID(c)
+	if err != nil {
+		return err
+	}
 	recipeID, err := strconv.ParseInt(c.Params("recipeId"), 10, 64)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "invalid recipeId")
@@ -63,7 +70,10 @@ func (h *Handler) Remove(c fiber.Ctx) error {
 }
 
 func (h *Handler) List(c fiber.Ctx) error {
-	userID := c.Locals("userID").(int64)
+	userID, err := userctx.CurrentUserID(c)
+	if err != nil {
+		return err
+	}
 
 	var limit int32 = 20
 	var offset int32 = 0
