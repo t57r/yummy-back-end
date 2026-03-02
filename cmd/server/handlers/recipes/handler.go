@@ -9,6 +9,7 @@ import (
 	"yummy/internal/utils"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Handler struct {
@@ -16,9 +17,11 @@ type Handler struct {
 }
 
 type pagination struct {
-	Limit  int   `json:"limit"`
-	Offset int   `json:"offset"`
-	Total  int64 `json:"total"`
+	Limit      int   `json:"limit"`
+	LastID     int64 `json:"last_id"`
+	NextLastID int64 `json:"next_last_id,omitempty"`
+	HasNext    bool  `json:"has_next"`
+	Total      int64 `json:"total"`
 }
 
 type listResponse[T any] struct {
@@ -36,9 +39,14 @@ func (h *Handler) List(c fiber.Ctx) error {
 	category := strings.TrimSpace(c.Query("category"))
 
 	limit := clampInt(parseInt(c.Query("limit"), 20), 1, 100)
-	offset := clampInt(parseInt(c.Query("offset"), 0), 0, 1_000_000)
+	lastID := parseInt64(c.Query("last_id"), 0)
+	if lastID < 0 {
+		return fiber.NewError(fiber.StatusBadRequest, "invalid last_id")
+	}
+	queryLimit := limit + 1
 
 	qText := utils.ToPgText(c.Query("q"))
+	lastIDArg := pgtype.Int8{Int64: lastID, Valid: lastID > 0}
 
 	var (
 		total int64
@@ -57,8 +65,8 @@ func (h *Handler) List(c fiber.Ctx) error {
 
 		rows, err = h.Queries.ListRecipesByCategoryName(ctx, db.ListRecipesByCategoryNameParams{
 			Name:   category,
-			Limit:  int32(limit),
-			Offset: int32(offset),
+			Limit:  int32(queryLimit),
+			LastID: lastIDArg,
 			Q:      qText,
 		})
 		if err != nil {
@@ -71,8 +79,8 @@ func (h *Handler) List(c fiber.Ctx) error {
 		}
 
 		rows, err = h.Queries.ListRecipes(ctx, db.ListRecipesParams{
-			Limit:  int32(limit),
-			Offset: int32(offset),
+			Limit:  int32(queryLimit),
+			LastID: lastIDArg,
 			Q:      qText,
 		})
 		if err != nil {
@@ -80,12 +88,24 @@ func (h *Handler) List(c fiber.Ctx) error {
 		}
 	}
 
+	hasNext := len(rows) > limit
+	if hasNext {
+		rows = rows[:limit]
+	}
+
+	var nextLastID int64
+	if len(rows) > 0 {
+		nextLastID = rows[len(rows)-1].ID
+	}
+
 	return c.JSON(listResponse[db.Recipe]{
 		Data: rows,
 		Pagination: pagination{
-			Limit:  limit,
-			Offset: offset,
-			Total:  total,
+			Limit:      limit,
+			LastID:     lastID,
+			NextLastID: nextLastID,
+			HasNext:    hasNext,
+			Total:      total,
 		},
 	})
 }
@@ -108,6 +128,14 @@ func (h *Handler) GetByID(c fiber.Ctx) error {
 
 func parseInt(s string, def int) int {
 	n, err := strconv.Atoi(s)
+	if err != nil {
+		return def
+	}
+	return n
+}
+
+func parseInt64(s string, def int64) int64 {
+	n, err := strconv.ParseInt(s, 10, 64)
 	if err != nil {
 		return def
 	}

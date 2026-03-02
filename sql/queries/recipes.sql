@@ -42,8 +42,9 @@ SELECT
   r.tags
 FROM recipes r
 WHERE (sqlc.narg(q)::text IS NULL OR r.title ILIKE ('%' || sqlc.narg(q) || '%'))
+  AND (sqlc.narg(last_id)::bigint IS NULL OR r.id > sqlc.narg(last_id)::bigint)
 ORDER BY r.id
-LIMIT $1 OFFSET $2;
+LIMIT $1;
 
 -- name: ListRecipesByCategoryName :many
 SELECT
@@ -63,8 +64,9 @@ JOIN recipe_categories rc ON rc.recipe_id = r.id
 JOIN categories c ON c.id = rc.category_id
 WHERE c.name = $1
   AND (sqlc.narg(q)::text IS NULL OR r.title ILIKE ('%' || sqlc.narg(q) || '%'))
+  AND (sqlc.narg(last_id)::bigint IS NULL OR r.id > sqlc.narg(last_id)::bigint)
 ORDER BY r.id
-LIMIT $2 OFFSET $3;
+LIMIT $2;
 
 -- name: RecipeExists :one
 SELECT EXISTS(SELECT 1 FROM recipes WHERE id = $1);

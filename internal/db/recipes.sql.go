@@ -95,19 +95,20 @@ SELECT
   r.preparation,
   r.tags
 FROM recipes r
-WHERE ($3::text IS NULL OR r.title ILIKE ('%' || $3 || '%'))
+WHERE ($2::text IS NULL OR r.title ILIKE ('%' || $2 || '%'))
+  AND ($3::bigint IS NULL OR r.id > $3::bigint)
 ORDER BY r.id
-LIMIT $1 OFFSET $2
+LIMIT $1
 `
 
 type ListRecipesParams struct {
 	Limit  int32       `json:"limit"`
-	Offset int32       `json:"offset"`
 	Q      pgtype.Text `json:"q"`
+	LastID pgtype.Int8 `json:"last_id"`
 }
 
 func (q *Queries) ListRecipes(ctx context.Context, arg ListRecipesParams) ([]Recipe, error) {
-	rows, err := q.db.Query(ctx, listRecipes, arg.Limit, arg.Offset, arg.Q)
+	rows, err := q.db.Query(ctx, listRecipes, arg.Limit, arg.Q, arg.LastID)
 	if err != nil {
 		return nil, err
 	}
@@ -155,24 +156,25 @@ FROM recipes r
 JOIN recipe_categories rc ON rc.recipe_id = r.id
 JOIN categories c ON c.id = rc.category_id
 WHERE c.name = $1
-  AND ($4::text IS NULL OR r.title ILIKE ('%' || $4 || '%'))
+  AND ($3::text IS NULL OR r.title ILIKE ('%' || $3 || '%'))
+  AND ($4::bigint IS NULL OR r.id > $4::bigint)
 ORDER BY r.id
-LIMIT $2 OFFSET $3
+LIMIT $2
 `
 
 type ListRecipesByCategoryNameParams struct {
 	Name   string      `json:"name"`
 	Limit  int32       `json:"limit"`
-	Offset int32       `json:"offset"`
 	Q      pgtype.Text `json:"q"`
+	LastID pgtype.Int8 `json:"last_id"`
 }
 
 func (q *Queries) ListRecipesByCategoryName(ctx context.Context, arg ListRecipesByCategoryNameParams) ([]Recipe, error) {
 	rows, err := q.db.Query(ctx, listRecipesByCategoryName,
 		arg.Name,
 		arg.Limit,
-		arg.Offset,
 		arg.Q,
+		arg.LastID,
 	)
 	if err != nil {
 		return nil, err
